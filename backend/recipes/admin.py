@@ -1,5 +1,7 @@
 from django.contrib import admin
-from recipes.models import Tag, Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingCart
+from recipes.models import (
+    Tag, Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingCart
+)
 
 
 class RecipeIngredientInline(admin.TabularInline):
@@ -23,7 +25,9 @@ class IngredientAdmin(admin.ModelAdmin):
 class RecipeAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'favorite_count')
     list_filter = ('tags',)
-    search_fields = ('name', 'author__username', 'author__email')
+    search_fields = (
+        'name', 'author__username', 'author__email'
+    )
     inlines = (RecipeIngredientInline,)
 
     def favorite_count(self, obj):

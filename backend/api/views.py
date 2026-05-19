@@ -52,28 +52,42 @@ class RecipeViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(author_id=author)
         is_favorited = self.request.query_params.get('is_favorited')
         if is_favorited and self.request.user.is_authenticated:
-            queryset = queryset.filter(favorites__user=self.request.user)
-        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
+            queryset = queryset.filter(
+                favorites__user=self.request.user
+            )
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart'
+        )
         if is_in_shopping_cart and self.request.user.is_authenticated:
-            queryset = queryset.filter(shopping_cart__user=self.request.user)
+            queryset = queryset.filter(
+                shopping_cart__user=self.request.user
+            )
         return queryset
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            Favorite.objects.get_or_create(user=request.user, recipe=recipe)
+            Favorite.objects.get_or_create(
+                user=request.user, recipe=recipe
+            )
             return Response(status=status.HTTP_201_CREATED)
-        Favorite.objects.filter(user=request.user, recipe=recipe).delete()
+        Favorite.objects.filter(
+            user=request.user, recipe=recipe
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            ShoppingCart.objects.get_or_create(user=request.user, recipe=recipe)
+            ShoppingCart.objects.get_or_create(
+                user=request.user, recipe=recipe
+            )
             return Response(status=status.HTTP_201_CREATED)
-        ShoppingCart.objects.filter(user=request.user, recipe=recipe).delete()
+        ShoppingCart.objects.filter(
+            user=request.user, recipe=recipe
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
@@ -87,9 +101,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
         text = ''
         for item in ingredients:
-            text += f"{item['ingredient__name']} ({item['ingredient__measurement_unit']}) — {item['total']}\n"
+            text += (
+                f"{item['ingredient__name']} "
+                f"({item['ingredient__measurement_unit']}) "
+                f"— {item['total']}\n"
+            )
         response = HttpResponse(text, content_type='text/plain')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.txt"'
+        )
         return response
 
 
@@ -98,15 +118,21 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        return User.objects.filter(subscribers__user=self.request.user)
+        return User.objects.filter(
+            subscribers__user=self.request.user
+        )
 
     @action(detail=True, methods=['post', 'delete'])
     def subscribe(self, request, pk=None):
         author = get_object_or_404(User, pk=pk)
         if request.method == 'POST':
-            Subscription.objects.get_or_create(user=request.user, author=author)
+            Subscription.objects.get_or_create(
+                user=request.user, author=author
+            )
             return Response(status=status.HTTP_201_CREATED)
-        Subscription.objects.filter(user=request.user, author=author).delete()
+        Subscription.objects.filter(
+            user=request.user, author=author
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -121,7 +147,10 @@ def avatar_view(request):
             user.avatar = field.to_internal_value(avatar_data)
             user.save()
         return Response(
-            {'avatar': request.build_absolute_uri(user.avatar.url) if user.avatar else None}
+            {'avatar': (
+                request.build_absolute_uri(user.avatar.url)
+                if user.avatar else None
+            )}
         )
     elif request.method == 'DELETE':
         user.avatar.delete()

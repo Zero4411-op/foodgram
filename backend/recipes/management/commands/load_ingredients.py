@@ -15,4 +15,6 @@ class Command(BaseCommand):
                     name=item['name'],
                     measurement_unit=item['measurement_unit']
                 )
-        self.stdout.write(self.style.SUCCESS(f'Загружено {len(ingredients)} ингредиентов'))
+        self.stdout.write(self.style.SUCCESS(
+            f'Загружено {len(ingredients)} ингредиентов'
+        ))

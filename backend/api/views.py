@@ -7,9 +7,9 @@ from django.db.models import Sum
 from django.http import HttpResponse
 
 from recipes.models import (
-    Tag, Ingredient, Recipe, Favorite, ShoppingCart, RecipeIngredient
+    Tag, Ingredient, Recipe, RecipeIngredient
 )
-from users.models import User, Subscription
+from users.models import User
 from api.serializers import (
     TagSerializer, IngredientSerializer, RecipeSerializer,
     RecipeCreateSerializer, SubscriptionSerializer, Base64ImageField
@@ -68,26 +68,18 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            Favorite.objects.get_or_create(
-                user=request.user, recipe=recipe
-            )
+            request.user.favorites.get_or_create(recipe=recipe)
             return Response(status=status.HTTP_201_CREATED)
-        Favorite.objects.filter(
-            user=request.user, recipe=recipe
-        ).delete()
+        request.user.favorites.filter(recipe=recipe).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post', 'delete'])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         if request.method == 'POST':
-            ShoppingCart.objects.get_or_create(
-                user=request.user, recipe=recipe
-            )
+            request.user.shopping_cart.get_or_create(recipe=recipe)
             return Response(status=status.HTTP_201_CREATED)
-        ShoppingCart.objects.filter(
-            user=request.user, recipe=recipe
-        ).delete()
+        request.user.shopping_cart.filter(recipe=recipe).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'])
@@ -126,13 +118,9 @@ class SubscriptionViewSet(viewsets.ModelViewSet):
     def subscribe(self, request, pk=None):
         author = get_object_or_404(User, pk=pk)
         if request.method == 'POST':
-            Subscription.objects.get_or_create(
-                user=request.user, author=author
-            )
+            request.user.subscriptions.get_or_create(author=author)
             return Response(status=status.HTTP_201_CREATED)
-        Subscription.objects.filter(
-            user=request.user, author=author
-        ).delete()
+        request.user.subscriptions.filter(author=author).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 

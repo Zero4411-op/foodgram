@@ -1,10 +1,12 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+MAX_LENGTH_EMAIL = 254
+
 
 class User(AbstractUser):
     email = models.EmailField(
-        max_length=254, unique=True
+        max_length=MAX_LENGTH_EMAIL, unique=True
     )
     avatar = models.ImageField(
         upload_to='users/images/', blank=True, null=True

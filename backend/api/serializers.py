@@ -1,11 +1,13 @@
 import base64
 import uuid
+
 from django.core.files.base import ContentFile
 from rest_framework import serializers
-from users.models import User, Subscription
+
 from recipes.models import (
-    Tag, Ingredient, Recipe, RecipeIngredient, Favorite, ShoppingCart
+    Tag, Ingredient, Recipe, RecipeIngredient
 )
+from users.models import User
 
 
 class Base64ImageField(serializers.ImageField):
@@ -32,8 +34,8 @@ class UserSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Subscription.objects.filter(
-                user=request.user, author=obj
+            return request.user.subscriptions.filter(
+                author=obj
             ).exists()
         return False
 
@@ -81,28 +83,36 @@ class RecipeSerializer(serializers.ModelSerializer):
     def get_is_favorited(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Favorite.objects.filter(
-                user=request.user, recipe=obj
+            return request.user.favorites.filter(
+                recipe=obj
             ).exists()
         return False
 
     def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return ShoppingCart.objects.filter(
-                user=request.user, recipe=obj
+            return request.user.shopping_cart.filter(
+                recipe=obj
             ).exists()
         return False
 
 
-class RecipeCreateSerializer(serializers.ModelSerializer):
-    ingredients = serializers.ListField(
-        child=serializers.DictField(), write_only=True
+class IngredientAmountSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    amount = serializers.IntegerField(
+        min_value=1, max_value=32000
     )
+
+
+class RecipeCreateSerializer(serializers.ModelSerializer):
+    ingredients = IngredientAmountSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
     )
     image = Base64ImageField()
+    cooking_time = serializers.IntegerField(
+        min_value=1, max_value=32000
+    )
 
     class Meta:
         model = Recipe
@@ -116,13 +126,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         validated_data['author'] = self.context['request'].user
         recipe = Recipe.objects.create(**validated_data)
         recipe.tags.set(tags_data)
-        for ingredient in ingredients_data:
-            ingredient_obj = Ingredient.objects.get(id=ingredient['id'])
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=ingredient_obj,
-                amount=ingredient['amount']
-            )
+        self._create_ingredients(recipe, ingredients_data)
         return recipe
 
     def update(self, instance, validated_data):
@@ -138,14 +142,19 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
         if ingredients_data is not None:
             instance.recipe_ingredients.all().delete()
-            for ingredient in ingredients_data:
-                ingredient_obj = Ingredient.objects.get(id=ingredient['id'])
-                RecipeIngredient.objects.create(
-                    recipe=instance,
-                    ingredient=ingredient_obj,
-                    amount=ingredient['amount']
-                )
+            self._create_ingredients(instance, ingredients_data)
         return instance
+
+    @staticmethod
+    def _create_ingredients(recipe, ingredients_data):
+        RecipeIngredient.objects.bulk_create([
+            RecipeIngredient(
+                recipe=recipe,
+                ingredient=Ingredient.objects.get(id=ingredient['id']),
+                amount=ingredient['amount']
+            )
+            for ingredient in ingredients_data
+        ])
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
@@ -166,13 +175,13 @@ class SubscriptionSerializer(serializers.ModelSerializer):
     def get_is_subscribed(self, obj):
         request = self.context.get('request')
         if request and request.user.is_authenticated:
-            return Subscription.objects.filter(
-                user=request.user, author=obj
+            return request.user.subscriptions.filter(
+                author=obj
             ).exists()
         return False
 
     def get_recipes(self, obj):
-        recipes = Recipe.objects.filter(author=obj)[:3]
+        recipes = obj.recipes.all()[:3]
         return [
             {
                 'id': r.id,

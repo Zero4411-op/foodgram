@@ -108,6 +108,7 @@ class IngredientAmountSerializer(serializers.Serializer):
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     ingredients = IngredientAmountSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(), many=True
@@ -120,7 +121,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = (
-            'name', 'image', 'text', 'ingredients', 'tags', 'cooking_time'
+            'id', 'name', 'image', 'text', 'ingredients', 'tags', 'cooking_time'
         )
 
     def validate_cooking_time(self, value):

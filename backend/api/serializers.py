@@ -9,6 +9,9 @@ from recipes.models import (
 )
 from users.models import User
 
+MAX_AMOUNT = 32000
+MIN_AMOUNT = 1
+
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
@@ -100,7 +103,7 @@ class RecipeSerializer(serializers.ModelSerializer):
 class IngredientAmountSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     amount = serializers.IntegerField(
-        min_value=1, max_value=32000
+        min_value=MIN_AMOUNT, max_value=MAX_AMOUNT
     )
 
 
@@ -111,7 +114,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     )
     image = Base64ImageField()
     cooking_time = serializers.IntegerField(
-        min_value=1, max_value=32000
+        min_value=MIN_AMOUNT, max_value=MAX_AMOUNT
     )
 
     class Meta:

@@ -64,6 +64,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         return queryset
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(
+            serializer.data,
+            status=status.HTTP_201_CREATED
+        )
+
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)

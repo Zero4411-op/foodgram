@@ -123,6 +123,25 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'name', 'image', 'text', 'ingredients', 'tags', 'cooking_time'
         )
 
+    def validate_cooking_time(self, value):
+        if value < MIN_AMOUNT:
+            raise serializers.ValidationError(
+                'Время приготовления должно быть не менее 1 минуты.'
+            )
+        return value
+
+    def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError(
+                'Добавьте хотя бы один ингредиент.'
+            )
+        for ingredient in value:
+            if ingredient['amount'] < MIN_AMOUNT:
+                raise serializers.ValidationError(
+                    'Количество ингредиента должно быть не менее 1.'
+                )
+        return value
+
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         tags_data = validated_data.pop('tags')
